@@ -1,9 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<link rel="icon" type="image/png" href="/primals-favicon.png">
-<link rel="shortcut icon" type="image/png" href="/primals-favicon.png">
-<link rel="apple-touch-icon" href="/primals-favicon.png">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Primal Dash</title>
@@ -235,7 +232,7 @@
         <p style="opacity:0.7;font-size:11px;">SPACE / TAP / CLICK to jump</p>
       </div>
       <div class="leaderboard" id="leaderboardStart">
-        <div class="lbTitle">TOP 10</div>
+        <div class="lbTitle">TOP 20</div>
         <div class="lbRows" id="lbRowsStart"><div class="lbMsg">Loading leaderboard…</div></div>
       </div>
     </div>
@@ -252,7 +249,7 @@
         <button class="btn" id="retryBtn">RUN AGAIN</button>
       </div>
       <div class="leaderboard" id="leaderboardOver">
-        <div class="lbTitle">TOP 10</div>
+        <div class="lbTitle">TOP 20</div>
         <div class="lbRows" id="lbRowsOver"><div class="lbMsg">Loading leaderboard…</div></div>
       </div>
     </div>
@@ -416,8 +413,18 @@
       return;
     }
     try{
-      const snap = await db.collection('scores').orderBy('score','desc').limit(10).get();
-      const rows = snap.docs.map(d=>d.data());
+      // Pull a larger batch (since one player can appear many times), then keep
+      // only each username's single best score, then trim down to the top 10.
+      const snap = await db.collection('scores').orderBy('score','desc').limit(200).get();
+      const allRows = snap.docs.map(d=>d.data());
+      const bestByUser = new Map();
+      for(const row of allRows){
+        const key = (row.username || 'Player').trim().toLowerCase();
+        if(!bestByUser.has(key)){
+          bestByUser.set(key, row);
+        }
+      }
+      const rows = Array.from(bestByUser.values()).slice(0,20);
       renderLeaderboardInto(lbRowsStart, rows);
       renderLeaderboardInto(lbRowsOver, rows);
     }catch(e){
@@ -1180,15 +1187,18 @@
           break;
         }
       }
-      // collisions - bananas
+      // collisions - bananas (full-body box, so the head/hat/arms count too, not just the torso center)
+      const pickupPad = 14; // roughly a banana's radius, so touching the edge still counts
+      const pickupLeft = centerX - player.w*0.65 - pickupPad;
+      const pickupRight = centerX + player.w*0.65 + pickupPad;
+      const pickupTop = player.y - 135 - pickupPad; // reaches above the hat
+      const pickupBottom = player.y + 6 + pickupPad; // just past the feet
       for(const b of bananas){
         if(!b.collected){
-          const dx = centerX - b.x;
-          const dy = (player.y-player.h/2) - b.y;
-          if(Math.sqrt(dx*dx+dy*dy) < 42){
+          if(b.x > pickupLeft && b.x < pickupRight && b.y > pickupTop && b.y < pickupBottom){
             b.collected = true;
-            score += 25;
-            distanceScore += 25;
+            score += 100;
+            distanceScore += 100;
           }
         }
       }
