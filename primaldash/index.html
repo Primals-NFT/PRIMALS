@@ -112,6 +112,7 @@
     letter-spacing:1.5px;
     font-size:clamp(16px,3vw,22px);
     background: linear-gradient(180deg,var(--amber),#b56f1e);
+    background-clip: padding-box;
     color:var(--ink);
     border:3px solid var(--ink);
     border-radius:10px;
@@ -271,7 +272,8 @@
     border-color:var(--ink);
   }
   @media (max-width: 620px){
-    .overlay{ flex-direction:column; overflow-y:auto; padding:12px; gap:8px; }
+    .overlay{ flex-direction:column; justify-content:flex-start; overflow-y:auto; padding:12px; gap:8px; }
+    .overlayMain{ justify-content:flex-start; flex:0 0 auto; }
     .leaderboard{ width:min(280px,90%); flex:0 0 auto; align-self:center; max-height:160px; }
   }
 </style>
@@ -321,6 +323,13 @@
         </div>
         <p id="newBestMsg" class="new hidden">NEW BEST SCORE!</p>
         <p id="submitStatus" style="opacity:0.65;font-size:11px;min-height:14px;"></p>
+        <div class="worldSelect" id="worldSelectOver">
+          <div class="worldTitle">SELECT YOUR WORLD</div>
+          <div class="worldOptions">
+            <button type="button" class="worldOption" data-world="1">The Explorer</button>
+            <button type="button" class="worldOption" data-world="2">The Graveyard</button>
+          </div>
+        </div>
         <button class="btn" id="retryBtn">RUN AGAIN</button>
       </div>
       <div class="leaderboard" id="leaderboardOver">
@@ -423,13 +432,18 @@
   const worldOptionEls = document.querySelectorAll('.worldOption');
   let selectedWorld = 1;
   const WORLD_NAMES = { 1: 'THE EXPLORER', 2: 'THE GRAVEYARD' };
+  function syncWorldButtons(){
+    worldOptionEls.forEach(b=>{
+      b.classList.toggle('selected', parseInt(b.dataset.world,10) === selectedWorld);
+    });
+  }
   worldOptionEls.forEach(btn=>{
     btn.addEventListener('click', ()=>{
-      worldOptionEls.forEach(b=>b.classList.remove('selected'));
-      btn.classList.add('selected');
       selectedWorld = parseInt(btn.dataset.world, 10);
+      syncWorldButtons();
     });
   });
+  syncWorldButtons();
 
   // remember the name across runs in this browser tab (in-memory only)
   let playerName = 'Player';
@@ -893,48 +907,77 @@
     ctx.fillRect(0,GROUND_Y+2,W,7);
   }
 
-  function drawGroundAndSkyGraveyard(){
-    // dark night sky
-    const sky = ctx.createLinearGradient(0,0,0,GROUND_Y);
+  // ---------- pre-rendered graveyard background caches ----------
+  // The sky/stars/moon never change frame to frame, and the dead-tree layers only
+  // scroll (their shapes never change) — so we draw all of it once to offscreen
+  // canvases and just drawImage() them every frame instead of recomputing
+  // gradients, 40 stars, and recursive tree branches 60 times a second.
+  let graveyardSkyCanvas = null;
+  function getGraveyardSkyCanvas(){
+    if(graveyardSkyCanvas) return graveyardSkyCanvas;
+    const c = document.createElement('canvas');
+    c.width = W; c.height = GROUND_Y+6;
+    const g = c.getContext('2d');
+    const sky = g.createLinearGradient(0,0,0,GROUND_Y);
     sky.addColorStop(0,'#0c0f1e');
     sky.addColorStop(0.5,'#141a30');
     sky.addColorStop(1,'#20263c');
-    ctx.fillStyle = sky;
-    ctx.fillRect(0,0,W,GROUND_Y+6);
-
-    // stars
-    ctx.save();
-    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    g.fillStyle = sky;
+    g.fillRect(0,0,W,GROUND_Y+6);
+    g.save();
+    g.fillStyle = 'rgba(255,255,255,0.55)';
     for(let i=0;i<40;i++){
       const sx = (i*137.5) % W;
       const sy = (i*71.3) % (GROUND_Y*0.7);
-      ctx.globalAlpha = 0.3 + ((i*37)%10)/15;
-      ctx.fillRect(sx, sy, 1.6, 1.6);
+      g.globalAlpha = 0.3 + ((i*37)%10)/15;
+      g.fillRect(sx, sy, 1.6, 1.6);
     }
-    ctx.restore();
+    g.restore();
+    g.save();
+    g.fillStyle = '#e8e6d8';
+    g.globalAlpha = 0.92;
+    g.beginPath();
+    g.arc(W*0.8, 85, 38, 0, Math.PI*2);
+    g.fill();
+    g.fillStyle = 'rgba(180,180,170,0.4)';
+    g.beginPath(); g.arc(W*0.8-10, 75, 7, 0, Math.PI*2); g.fill();
+    g.beginPath(); g.arc(W*0.8+8, 95, 5, 0, Math.PI*2); g.fill();
+    g.restore();
+    graveyardSkyCanvas = c;
+    return c;
+  }
 
-    // moon
-    ctx.save();
-    ctx.fillStyle = '#e8e6d8';
-    ctx.globalAlpha = 0.92;
-    ctx.beginPath();
-    ctx.arc(W*0.8, 85, 38, 0, Math.PI*2);
-    ctx.fill();
-    ctx.fillStyle = 'rgba(180,180,170,0.4)';
-    ctx.beginPath(); ctx.arc(W*0.8-10, 75, 7, 0, Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(W*0.8+8, 95, 5, 0, Math.PI*2); ctx.fill();
-    ctx.restore();
-
-    // faraway dead-tree silhouette layers
-    layers.forEach((layer)=>{
-      const offset = (bgScroll*layer.speed) % (W*2.4);
-      ctx.fillStyle = 'rgba(6,8,14,0.85)';
+  let graveyardTreeCanvases = null;
+  let graveyardTileW = 0;
+  function getGraveyardTreeCanvases(){
+    if(graveyardTreeCanvases) return graveyardTreeCanvases;
+    graveyardTileW = Math.ceil(W*2.4);
+    const tileH = GROUND_Y+20;
+    graveyardTreeCanvases = layers.map(layer=>{
+      const c = document.createElement('canvas');
+      c.width = graveyardTileW; c.height = tileH;
+      const g = c.getContext('2d');
+      g.fillStyle = 'rgba(6,8,14,0.85)';
       layer.trees.forEach(t=>{
-        let x = t.x - offset;
-        if(x < -150) x += W*2.4;
-        if(x > W+150) x -= W*2.4;
-        drawDeadTree(x, GROUND_Y+4, t.w, t.h*0.85);
+        drawDeadTree(t.x, GROUND_Y+4, t.w, t.h*0.85, g);
       });
+      return c;
+    });
+    return graveyardTreeCanvases;
+  }
+
+  function drawGroundAndSkyGraveyard(){
+    // static sky/stars/moon — one cheap drawImage instead of redrawing every frame
+    ctx.drawImage(getGraveyardSkyCanvas(), 0, 0);
+
+    // scrolling dead-tree layers — pre-rendered once, drawn twice per frame for
+    // seamless wraparound instead of recomputing every branch every frame
+    const treeCanvases = getGraveyardTreeCanvases();
+    layers.forEach((layer,i)=>{
+      const offset = (bgScroll*layer.speed) % graveyardTileW;
+      const x = -offset;
+      ctx.drawImage(treeCanvases[i], x, 0);
+      ctx.drawImage(treeCanvases[i], x+graveyardTileW, 0);
     });
 
     // drifting ground fog
@@ -961,24 +1004,25 @@
     ctx.fillRect(0,GROUND_Y+2,W,7);
   }
 
-  function drawDeadTree(x, baseY, w, h){
-    ctx.save();
-    ctx.strokeStyle = ctx.fillStyle;
-    ctx.lineWidth = Math.max(3, w*0.06);
-    ctx.lineCap = 'round';
+  function drawDeadTree(x, baseY, w, h, targetCtx){
+    const c = targetCtx || ctx;
+    c.save();
+    c.strokeStyle = c.fillStyle;
+    c.lineWidth = Math.max(3, w*0.06);
+    c.lineCap = 'round';
     function branch(bx,by,angle,len,depth){
       if(depth<=0 || len<6) return;
       const ex = bx + Math.sin(angle)*len;
       const ey = by - Math.cos(angle)*len;
-      ctx.beginPath();
-      ctx.moveTo(bx,by);
-      ctx.lineTo(ex,ey);
-      ctx.stroke();
+      c.beginPath();
+      c.moveTo(bx,by);
+      c.lineTo(ex,ey);
+      c.stroke();
       branch(ex,ey, angle-0.5, len*0.68, depth-1);
       branch(ex,ey, angle+0.45, len*0.68, depth-1);
     }
     branch(x, baseY, 0, h*0.6, 3);
-    ctx.restore();
+    c.restore();
   }
 
   function drawFog(){
@@ -1708,6 +1752,10 @@
     render();
     requestAnimationFrame(loop);
   }
+  // pre-build the graveyard background caches now (everything they depend on is
+  // already declared above this point), so there's no first-frame hitch later
+  getGraveyardSkyCanvas();
+  getGraveyardTreeCanvases();
   loop();
 })();
 </script>
