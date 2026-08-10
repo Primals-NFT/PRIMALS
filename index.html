@@ -142,6 +142,26 @@
   }
   .btn-solid:hover { background: var(--red-bright); }
 
+  /* Glowing CTA — used for Check Eligibility */
+  .btn-glow {
+    position: relative;
+    background: var(--red-bright);
+    border-color: var(--red-bright);
+    box-shadow: 0 0 12px rgba(224,26,16,0.55), 0 0 28px rgba(224,26,16,0.3);
+    animation: glow-pulse 2.2s ease-in-out infinite;
+  }
+  .btn-glow:hover {
+    background: var(--red-bright);
+    box-shadow: 0 0 18px rgba(224,26,16,0.8), 0 0 42px rgba(224,26,16,0.5);
+  }
+  @keyframes glow-pulse {
+    0%, 100% { box-shadow: 0 0 12px rgba(224,26,16,0.55), 0 0 28px rgba(224,26,16,0.3); }
+    50% { box-shadow: 0 0 20px rgba(224,26,16,0.85), 0 0 46px rgba(224,26,16,0.55); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .btn-glow { animation: none; }
+  }
+
   /* Mobile icon-only nav buttons — hidden on desktop */
   .nav-icon-btn {
     display: none;
@@ -751,7 +771,6 @@
   /* Very small screens */
   @media (max-width: 380px) {
     .hero-headline { font-size: 1.6rem; }
-    .trait-cards { grid-template-columns: 1fr; }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -939,123 +958,132 @@
     100% { opacity: 0; transform: scale(0.5); }
   }
 
-  /* SNEAK PEEK GALLERY — stacked cards */
+  /* SNEAK PEEK — infinite auto-scrolling carousel */
   #gallery {
     background: var(--black);
   }
 
-  .stack-wrap {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-top: 3rem;
-  }
-
-  .card-stack {
+  .carousel-viewport {
     position: relative;
-    width: min(340px, 82vw);
-    height: 440px;
+    width: 100%;
+    overflow-x: hidden;
+    overflow-y: visible;
+    padding: 2.5rem 0;
+    margin-top: 3rem;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: pan-y;
+    cursor: grab;
   }
 
-  .stack-card {
+  .carousel-viewport.grabbing { cursor: grabbing; }
+
+  /* soft edge fade so cards don't hard-clip */
+  .carousel-viewport::before,
+  .carousel-viewport::after {
+    content: '';
     position: absolute;
-    inset: 0;
-    overflow: hidden;
+    top: 0; bottom: 0;
+    width: min(10vw, 90px);
+    z-index: 5;
+    pointer-events: none;
+  }
+  .carousel-viewport::before {
+    left: 0;
+    background: linear-gradient(to right, var(--black), transparent);
+  }
+  .carousel-viewport::after {
+    right: 0;
+    background: linear-gradient(to left, var(--black), transparent);
+  }
+
+  .carousel-track {
+    display: flex;
+    gap: 1.1rem;
+    width: max-content;
+    will-change: transform;
+  }
+
+  .carousel-card {
+    position: relative;
+    flex: 0 0 auto;
+    width: 240px;
+    height: 310px;
     border: 1px solid var(--border);
     background: var(--surface2);
-    cursor: pointer;
-    box-shadow: 0 14px 34px rgba(0,0,0,0.55);
-    transition: transform 0.5s cubic-bezier(.22,.8,.25,1), box-shadow 0.4s ease, filter 0.4s ease;
+    overflow: hidden;
+    transform: scale(1) translateY(0);
+    transition: transform 0.4s cubic-bezier(.22,.8,.25,1), box-shadow 0.4s ease, border-color 0.4s ease, z-index 0s;
+    z-index: 1;
   }
 
-  .stack-card.no-transition { transition: none !important; }
-
-  .stack-img {
+  .carousel-img {
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
-    display: block;
-    filter: grayscale(30%) brightness(0.68);
+    filter: grayscale(10%) brightness(0.88);
     transition: filter 0.45s ease, transform 0.6s ease;
+    pointer-events: none;
+    -webkit-user-drag: none;
   }
 
-  .stack-info {
+  .carousel-info {
     position: absolute;
     inset: 0;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    padding: 1.5rem;
-    background: linear-gradient(to top, rgba(5,4,4,0.96) 8%, rgba(5,4,4,0.25) 58%, transparent 100%);
+    padding: 1rem;
+    background: linear-gradient(to top, rgba(5,4,4,0.98) 0%, rgba(5,4,4,0.92) 30%, rgba(5,4,4,0.55) 58%, transparent 100%);
     opacity: 0;
     transition: opacity 0.4s ease;
+    pointer-events: none;
   }
 
-  .stack-number {
+  .carousel-name {
     font-family: 'Cinzel', serif;
-    font-size: 0.7rem;
-    letter-spacing: 0.15em;
-    color: var(--red-bright);
-    opacity: 0.85;
-    margin-bottom: 0.6rem;
-  }
-
-  .stack-name {
-    font-family: 'Cinzel', serif;
-    font-size: 1.15rem;
+    font-size: 0.98rem;
     font-weight: 700;
     color: var(--text);
-    letter-spacing: 0.05em;
-    margin-bottom: 0.5rem;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.4rem;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.9);
   }
 
-  .stack-lore {
-    font-size: 0.85rem;
-    color: var(--text-muted);
-    line-height: 1.6;
+  .carousel-lore {
+    font-size: 0.76rem;
+    color: #C9B8B8;
+    line-height: 1.55;
+    text-shadow: 0 1px 6px rgba(0,0,0,0.9);
   }
 
-  /* Stack depth positions, applied/reordered by JS */
-  .stack-card.pos-0 { transform: translate(0,0) rotate(0deg) scale(1); z-index: 4; pointer-events: auto; }
-  .stack-card.pos-1 { transform: translate(12px,12px) rotate(3deg) scale(0.96); z-index: 3; pointer-events: none; filter: brightness(0.75); }
-  .stack-card.pos-2 { transform: translate(22px,22px) rotate(-3.5deg) scale(0.92); z-index: 2; pointer-events: none; filter: brightness(0.6); }
-  .stack-card.pos-3 { transform: translate(30px,32px) rotate(5deg) scale(0.88); z-index: 1; pointer-events: none; filter: brightness(0.48); opacity: 0.9; }
-
-  .stack-card.pos-0:hover,
-  .stack-card.pos-0.touch-revealed {
-    transform: translate(0,-16px) scale(1.06);
-    box-shadow: 0 26px 55px rgba(192,17,10,0.3);
+  /* popped state — desktop hover / mobile tap */
+  .carousel-card.popped {
+    transform: scale(1.28) translateY(-14px);
+    z-index: 20;
+    border-color: var(--red);
+    box-shadow: 0 28px 60px rgba(0,0,0,0.65), 0 0 0 1px rgba(192,17,10,0.25);
   }
-  .stack-card.pos-0:hover .stack-img,
-  .stack-card.pos-0.touch-revealed .stack-img {
-    filter: grayscale(0%) brightness(0.88);
-    transform: scale(1.05);
+  .carousel-card.popped .carousel-img {
+    filter: grayscale(0%) brightness(0.8);
+    transform: scale(1.04);
   }
-  .stack-card.pos-0:hover .stack-info,
-  .stack-card.pos-0.touch-revealed .stack-info {
+  .carousel-card.popped .carousel-info {
     opacity: 1;
   }
 
-  .stack-card.exiting {
-    transform: translate(-70px,-90px) rotate(-14deg) scale(0.9) !important;
-    opacity: 0;
-  }
-
-  .stack-hint {
-    text-align: center;
-    color: var(--text-muted);
-    font-size: 0.75rem;
-    letter-spacing: 0.1em;
-    margin-top: 1.75rem;
-    opacity: 0.65;
-  }
-
   @media (max-width: 720px) {
-    .card-stack { width: min(300px, 86vw); height: 400px; margin-top: 1rem; }
-    .stack-name { font-size: 1rem; }
-    .stack-lore { font-size: 0.8rem; }
+    .carousel-card { width: 165px; height: 220px; }
+    .carousel-card.popped { transform: scale(1.35) translateY(-10px); }
+    .carousel-name { font-size: 0.88rem; }
+    .carousel-lore { font-size: 0.72rem; }
+    .carousel-viewport { touch-action: pan-y; margin-top: 1rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .carousel-card, .carousel-img, .carousel-info { transition: none; }
   }
 
   /* ART CONTEST */
@@ -1290,17 +1318,160 @@
     margin-top: 2.5rem;
   }
 
-  .contest-deadline {
+  /* COUNTDOWN — primal-styled, glowing ember timer */
+  .countdown {
+    position: relative;
     display: inline-flex;
+    flex-direction: column;
     align-items: center;
-    gap: 0.4rem;
-    background: rgba(192,17,10,0.08);
-    border: 1px solid var(--border);
-    color: var(--red-bright);
-    font-size: 0.72rem;
-    letter-spacing: 0.15em;
+    gap: 0.9rem;
+    padding: 1.85rem 2.75rem;
+    background: linear-gradient(165deg, rgba(24,10,10,0.92) 0%, rgba(5,4,4,0.97) 100%);
+    border: 1px solid var(--red);
+    overflow: hidden;
+    isolation: isolate;
+  }
+
+  .countdown::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0.07;
+    background-image: repeating-linear-gradient(
+      -55deg, transparent, transparent 3px,
+      rgba(192,17,10,0.9) 3px, rgba(192,17,10,0.9) 4px
+    );
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .countdown::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 1px solid transparent;
+    background:
+      linear-gradient(90deg, var(--red-bright), transparent 30%, transparent 70%, var(--red-bright)) border-box;
+    -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0.55;
+    pointer-events: none;
+  }
+
+  .countdown-glow {
+    position: absolute;
+    inset: -45%;
+    background: radial-gradient(ellipse at center, rgba(224,26,16,0.28), transparent 70%);
+    filter: blur(22px);
+    animation: countdown-pulse 2.4s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  @keyframes countdown-pulse {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 0.95; transform: scale(1.1); }
+  }
+
+  .countdown-corner {
+    position: absolute;
+    width: 16px; height: 16px;
+    border-color: var(--red-bright);
+    opacity: 0.75;
+    z-index: 1;
+    pointer-events: none;
+  }
+  .countdown-corner.tl { top: 8px; left: 8px; border-top: 1px solid; border-left: 1px solid; }
+  .countdown-corner.tr { top: 8px; right: 8px; border-top: 1px solid; border-right: 1px solid; }
+  .countdown-corner.bl { bottom: 8px; left: 8px; border-bottom: 1px solid; border-left: 1px solid; }
+  .countdown-corner.br { bottom: 8px; right: 8px; border-bottom: 1px solid; border-right: 1px solid; }
+
+  .countdown-label {
+    position: relative;
+    font-size: 0.68rem;
+    letter-spacing: 0.32em;
     text-transform: uppercase;
-    padding: 0.5rem 1rem;
+    color: var(--red-bright);
+    z-index: 1;
+  }
+
+  .countdown-units {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7rem;
+    z-index: 1;
+  }
+
+  .countdown-unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 56px;
+  }
+
+  .countdown-value {
+    font-family: 'Cinzel', serif;
+    font-weight: 900;
+    font-size: 2.3rem;
+    color: #fff;
+    text-shadow: 0 0 20px rgba(224,26,16,0.9), 0 0 6px rgba(224,26,16,0.9);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+
+  .countdown-unit-label {
+    margin-top: 0.4rem;
+    font-size: 0.6rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .countdown-sep {
+    font-family: 'Cinzel', serif;
+    font-weight: 900;
+    font-size: 1.9rem;
+    color: var(--red-bright);
+    margin-top: 0.15rem;
+    animation: countdown-blink 1s steps(1) infinite;
+  }
+
+  @keyframes countdown-blink {
+    0%, 49% { opacity: 0.7; }
+    50%, 100% { opacity: 0.15; }
+  }
+
+  .countdown.ended {
+    padding: 1.75rem 2.25rem;
+  }
+
+  .countdown-ended-text {
+    position: relative;
+    z-index: 1;
+    font-family: 'Cinzel', serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--red-bright);
+    text-align: center;
+    letter-spacing: 0.02em;
+    line-height: 1.5;
+  }
+
+  @media (max-width: 720px) {
+    .countdown { padding: 1.4rem 1.4rem; gap: 0.7rem; }
+    .countdown-value { font-size: 1.55rem; }
+    .countdown-unit { min-width: 42px; }
+    .countdown-unit-label { font-size: 0.54rem; }
+    .countdown-sep { font-size: 1.3rem; margin-top: 0.05rem; }
+    .countdown-label { font-size: 0.6rem; letter-spacing: 0.26em; }
+    .countdown-ended-text { font-size: 0.92rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .countdown-glow { animation: none; opacity: 0.6; }
+    .countdown-sep { animation: none; opacity: 0.8; }
   }
 
   @media (max-width: 720px) {
@@ -1610,7 +1781,8 @@
     <h1 class="hero-headline">Not fully apes.<br>Not fully human.<br><span>Something else entirely.</span></h1>
     <p class="hero-sub">An ancient species awakens. Evolution is not a destination, it is a reckoning.</p>
     <div class="hero-actions">
-      <a href="https://discord.gg/ZRrWFfRVez" target="_blank" class="btn-solid">Join Discord</a>
+      <a href="https://primalswiztest.netlify.app/checkeligibility" class="btn-solid btn-glow">Check Eligibility</a>
+      <a href="https://discord.gg/ZRrWFfRVez" target="_blank" class="btn-outline">Join Discord</a>
       <a href="https://x.com/primalsnftx" target="_blank" class="btn-outline">Follow on X</a>
      <a href="https://www.primalsnft.xyz/primaldash" target="_blank" class="btn-solid">Play Primal Dash</a>
     </div>
@@ -1672,7 +1844,23 @@
     </div>
 
     <div class="contest-footer fade-in">
-      <span class="contest-deadline">Deadline · Aug 15, 5PM UTC</span>
+      <div class="countdown" id="countdown" aria-live="polite">
+        <div class="countdown-glow"></div>
+        <div class="countdown-corner tl"></div>
+        <div class="countdown-corner tr"></div>
+        <div class="countdown-corner bl"></div>
+        <div class="countdown-corner br"></div>
+        <p class="countdown-label">Submissions close in</p>
+        <div class="countdown-units">
+          <div class="countdown-unit"><span class="countdown-value" id="cd-days">00</span><span class="countdown-unit-label">Days</span></div>
+          <span class="countdown-sep">:</span>
+          <div class="countdown-unit"><span class="countdown-value" id="cd-hours">00</span><span class="countdown-unit-label">Hrs</span></div>
+          <span class="countdown-sep">:</span>
+          <div class="countdown-unit"><span class="countdown-value" id="cd-mins">00</span><span class="countdown-unit-label">Min</span></div>
+          <span class="countdown-sep">:</span>
+          <div class="countdown-unit"><span class="countdown-value" id="cd-secs">00</span><span class="countdown-unit-label">Sec</span></div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -1724,104 +1912,12 @@
     <div class="fade-in" style="text-align: center; margin-bottom: 1rem;">
       <p class="section-eyebrow">Sneak peek</p>
       <h2 class="section-title">The Awakened Primals</h2>
-      <p style="color: var(--text-muted); max-width: 520px; margin: 0 auto; font-size: 0.92rem;">A handful of Primals have surfaced early. Click to reveal the next.</p>
     </div>
+  </div>
 
-    <div class="stack-wrap fade-in">
-      <div class="card-stack" id="card-stack">
-        <div class="stack-card pos-0" tabindex="0" data-order="0">
-          <img src="DragonWarlord.jpg" alt="Dragon Warlord" class="stack-img" />
-          <div class="stack-info">
-            <p class="stack-name">Dragon Warlord</p>
-            <p class="stack-lore">Bound by oath to an ancient dragon, he channels its fury through every strike. When his beam ignites, even the legends retreat.</p>
-          </div>
-        </div>
-        <div class="stack-card pos-1" tabindex="0" data-order="1">
-          <img src="TigerClaus.jpg" alt="Tiger Claus" class="stack-img" />
-          <div class="stack-info">
-            <p class="stack-name">Tiger Claus</p>
-            <p class="stack-lore">The ruthless apex enforcer of the Primal wilds, gifts fear and loyalty across his legion.</p>
-          </div>
-        </div>
-        <div class="stack-card pos-2" tabindex="0" data-order="2">
-          <img src="KingPrimal.jpg" alt="King Primal" class="stack-img" />
-          <div class="stack-info">
-            <p class="stack-name">King Primal</p>
-            <p class="stack-lore">Crowned in the ruins of past empires, King Primal fought for his throne, promising treasure to the loyal and total annihilation to all else.</p>
-          </div>
-        </div>
-        <div class="stack-card pos-3" tabindex="0" data-order="3">
-          <img src="PrimalEmperor.jpg" alt="Primal Emperor" class="stack-img" />
-          <div class="stack-info">
-            <p class="stack-name">Primal Emperor</p>
-            <p class="stack-lore">Donned in his legendary fur bounty, the Primal Emperor symbolizes mastery of nature, abundance, and instinctive dominance.</p>
-          </div>
-        </div>
-        <div class="stack-card" tabindex="0" data-order="4">
-          <img src="AstralPrimal.jpg" alt="Astral Primal" class="stack-img" />
-          <div class="stack-info">
-            <p class="stack-name">Astral Primal</p>
-            <p class="stack-lore">A star touched evolution of the unfinished lineage, forever suspended between primal instinct and transcendent knowledge.</p>
-          </div>
-        </div>
-        <div class="stack-card" tabindex="0" data-order="5">
-          <img src="CaptainCloud.jpg" alt="Captain Cloud" class="stack-img" />
-          <div class="stack-info">
-            <p class="stack-name">Captain Cloud</p>
-            <p class="stack-lore">Before the maps were drawn and the stars were named, Captain Cloud sailed the unseen currents between worlds seeking the Awakening.</p>
-          </div>
-        </div>
-        <div class="stack-card" tabindex="0" data-order="6">
-          <img src="InfernalWarlord.jpg" alt="Infernal Warlord" class="stack-img" />
-          <div class="stack-info">
-            <p class="stack-name">Infernal Warlord</p>
-            <p class="stack-lore">Born of the old blood, the Infernal Warlord rejected the slow crawl of evolution and forged himself in primordial blaze.</p>
-          </div>
-        </div>
-        <div class="stack-card" tabindex="0" data-order="7">
-          <img src="OGPrimal.jpg" alt="OG Primal" class="stack-img" />
-          <div class="stack-info">
-            <p class="stack-name">OG Primal</p>
-            <p class="stack-lore">The last white furred oracle, the eyes of OG Primal are forever locked on the next big score, smoking the signal that wakes the ancient code.</p>
-          </div>
-        </div>
-         <div class="stack-card" tabindex="0" data-order="8">
-          <img src="GalacticPrimal.jpg" alt="Galactic Primal" class="stack-img" />
-          <div class="stack-info">
-            <p class="stack-name">Galactic Primal</p>
-            <p class="stack-lore">The Galactic Primal, wearing the cosmos in his fur and the future in his lenses, forever racing the next Awakening.</p>
-          </div>
-        </div>
-         <div class="stack-card" tabindex="0" data-order="9">
-          <img src="ApexPrimal.jpg" alt="Apex Primal" class="stack-img" />
-          <div class="stack-info">
-            <p class="stack-name">Apex Primal</p>
-            <p class="stack-lore">The Apex Primal who outran the unfinished bloodline, channeling the Awakening’s spark. Evolution’s first true upgrade, grinning at the future it already owns.</p>
-          </div>
-        </div>
-        <div class="stack-card" tabindex="0" data-order="10">
-          <img src="PrimalSamurai.jpg" alt="Primal Samurai" class="stack-img" />
-          <div class="stack-info">
-            <p class="stack-name">Primal Samurai</p>
-            <p class="stack-lore">Forged by forgotten relics and guided by the Awakening, he stands between instinct and evolution, guarding the path to what comes next.</p>
-          </div>
-        </div>
-        <div class="stack-card" tabindex="0" data-order="11">
-          <img src="SerpentGuardian.jpg" alt="Serpent Guardian" class="stack-img" />
-          <div class="stack-info">
-            <p class="stack-name">Serpent Guardian</p>
-            <p class="stack-lore">Once the sacred guardian of the primal groves, it rewrote its flesh. Now it walks the graveyard of its own kind, waiting for the final call of the Primals.</p>
-          </div>
-        </div>
-        <div class="stack-card" tabindex="0" data-order="12">
-          <img src="NakedPrimal.jpg" alt="Naked Primal" class="stack-img" />
-          <div class="stack-info">
-            <p class="stack-name">Naked Primal</p>
-            <p class="stack-lore">Once unchallenged, this naked Primal is eager to take it back after losing everything during the fall of his legion.</p>
-          </div>
-        </div>
-      </div>
-      <p class="stack-hint">Click to reveal the next</p>
+  <div class="carousel-viewport fade-in" id="carousel-viewport">
+    <div class="carousel-track" id="carousel-track">
+      <!-- cards injected by JS, then duplicated for the infinite loop -->
     </div>
   </div>
 </section>
@@ -1993,59 +2089,196 @@ const observer = new IntersectionObserver((entries) => {
 
 document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 
-// Sneak peek — stacked card gallery
+// Sneak peek — infinite auto-scrolling carousel
 (function() {
-  const stack = document.getElementById('card-stack');
-  if (!stack) return;
+  const PRIMALS = [
+    { name: "Dragon Warlord", img: "DragonWarlord.jpg", lore: "Bound by oath to an ancient dragon, he channels its fury through every strike. When his beam ignites, even the legends retreat." },
+    { name: "Tiger Claus", img: "TigerClaus.jpg", lore: "The ruthless apex enforcer of the Primal wilds, gifts fear and loyalty across his legion." },
+    { name: "King Primal", img: "KingPrimal.jpg", lore: "Crowned in the ruins of past empires, King Primal fought for his throne, promising treasure to the loyal and total annihilation to all else." },
+    { name: "Primal Emperor", img: "PrimalEmperor.jpg", lore: "Donned in his legendary fur bounty, the Primal Emperor symbolizes mastery of nature, abundance, and instinctive dominance." },
+    { name: "Astral Primal", img: "AstralPrimal.jpg", lore: "A star touched evolution of the unfinished lineage, forever suspended between primal instinct and transcendent knowledge." },
+    { name: "Captain Cloud", img: "CaptainCloud.jpg", lore: "Before the maps were drawn and the stars were named, Captain Cloud sailed the unseen currents between worlds seeking the Awakening." },
+    { name: "Infernal Warlord", img: "InfernalWarlord.jpg", lore: "Born of the old blood, the Infernal Warlord rejected the slow crawl of evolution and forged himself in primordial blaze." },
+    { name: "OG Primal", img: "OGPrimal.jpg", lore: "The last white furred oracle, the eyes of OG Primal are forever locked on the next big score, smoking the signal that wakes the ancient code." },
+    { name: "Galactic Primal", img: "GalacticPrimal.jpg", lore: "The Galactic Primal, wearing the cosmos in his fur and the future in his lenses, forever racing the next Awakening." },
+    { name: "Apex Primal", img: "ApexPrimal.jpg", lore: "The Apex Primal who outran the unfinished bloodline, channeling the Awakening's spark. Evolution's first true upgrade." },
+    { name: "Primal Samurai", img: "PrimalSamurai.jpg", lore: "Forged by forgotten relics and guided by the Awakening, he stands between instinct and evolution, guarding the path to what comes next." },
+    { name: "Serpent Guardian", img: "SerpentGuardian.jpg", lore: "Once the sacred guardian of the primal groves, it rewrote its flesh. Now it walks the graveyard of its own kind, waiting for the final call." },
+    { name: "Naked Primal", img: "NakedPrimal.jpg", lore: "Once unchallenged, this naked Primal is eager to take it back after losing everything during the fall of his legion." }
+  ];
 
-  let order = Array.from(stack.querySelectorAll('.stack-card'));
-  const isTouch = !window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  const viewport = document.getElementById('carousel-viewport');
+  const track = document.getElementById('carousel-track');
+  if (!viewport || !track) return;
 
-  function applyPositions() {
-    order.forEach((card, i) => {
-      card.classList.remove('pos-0', 'pos-1', 'pos-2', 'pos-3');
-      const depth = Math.min(i, 3);
-      card.classList.add('pos-' + depth);
-    });
+  // --- build cards (twice, back to back, for a seamless loop) ---
+  function buildCard(p) {
+    const card = document.createElement('div');
+    card.className = 'carousel-card';
+    card.tabIndex = 0;
+    card.innerHTML = `
+      <img src="${p.img}" alt="${p.name}" class="carousel-img" draggable="false" />
+      <div class="carousel-info">
+        <p class="carousel-name">${p.name}</p>
+        <p class="carousel-lore">${p.lore}</p>
+      </div>
+    `;
+    return card;
+  }
+  PRIMALS.forEach(p => track.appendChild(buildCard(p)));
+  PRIMALS.forEach(p => track.appendChild(buildCard(p))); // duplicate set
+
+  // --- state ---
+  let pos = 0;             // current scroll offset (px)
+  let halfWidth = 0;        // width of ONE full set of cards
+  let paused = false;       // true while hovered / popped / dragging
+  let dragging = false;
+  let dragMoved = false;
+  let dragStartX = 0;
+  let dragStartPos = 0;
+  let activeCard = null;
+  const SPEED = 0.55;       // px per frame
+  const DRAG_THRESHOLD = 6; // px before a touch counts as a drag, not a tap
+  const isCoarsePointer = window.matchMedia('(hover: none), (pointer: coarse)').matches;
+
+  function measure() {
+    halfWidth = track.scrollWidth / 2;
+  }
+  measure();
+  window.addEventListener('resize', measure);
+
+  function popCard(card) {
+    if (activeCard === card) return;
+    if (activeCard) activeCard.classList.remove('popped');
+    activeCard = card;
+    card.classList.add('popped');
+    paused = true;
+  }
+  function clearPop() {
+    if (activeCard) activeCard.classList.remove('popped');
+    activeCard = null;
+    paused = false;
   }
 
-  function advance(topCard) {
-    topCard.classList.add('exiting');
-    setTimeout(() => {
-      order.push(order.shift());
-      topCard.classList.remove('touch-revealed');
-      topCard.classList.add('no-transition');
-      applyPositions();
-      void topCard.offsetWidth; // force reflow so the snap-back is instant
-      topCard.classList.remove('no-transition');
-      topCard.classList.remove('exiting');
-    }, 480);
-  }
-
-  function handleActivate(e) {
-    const card = e.currentTarget;
-    if (!card.classList.contains('pos-0')) return;
-
-    if (isTouch && !card.classList.contains('touch-revealed')) {
-      // First tap on touch devices reveals the lore instead of cycling immediately
-      e.preventDefault();
-      card.classList.add('touch-revealed');
-      return;
+  // --- animation loop: single source of truth for position ---
+  function frame() {
+    if (!paused && !dragging) {
+      pos += SPEED;
+      if (pos >= halfWidth) pos -= halfWidth;
     }
-    advance(card);
+    track.style.transform = `translateX(${-pos}px)`;
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  // --- desktop: hover pauses + pops ---
+  if (!isCoarsePointer) {
+    track.querySelectorAll('.carousel-card').forEach(card => {
+      card.addEventListener('mouseenter', () => popCard(card));
+    });
+    viewport.addEventListener('mouseleave', () => clearPop());
   }
 
-  order.forEach(card => {
-    card.addEventListener('click', handleActivate);
-    card.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        handleActivate({ currentTarget: card, preventDefault: () => {} });
-      }
-    });
+  // --- touch: tap to pop, drag to swipe, tap-out to resume ---
+  viewport.addEventListener('pointerdown', (e) => {
+    if (e.pointerType !== 'touch' && e.pointerType !== 'pen') return;
+    dragging = true;
+    dragMoved = false;
+    dragStartX = e.clientX;
+    dragStartPos = pos;
+    paused = true;
+    viewport.classList.add('grabbing');
+    try { viewport.setPointerCapture(e.pointerId); } catch (err) {}
   });
 
-  applyPositions();
+  viewport.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    const dx = e.clientX - dragStartX;
+    if (Math.abs(dx) > DRAG_THRESHOLD) dragMoved = true;
+    if (dragMoved) {
+      let next = dragStartPos - dx;
+      next = ((next % halfWidth) + halfWidth) % halfWidth;
+      pos = next;
+    }
+  });
+
+  function endDrag(e) {
+    if (!dragging) return;
+    dragging = false;
+    viewport.classList.remove('grabbing');
+
+    if (dragMoved) {
+      // was a swipe — resume auto-scroll
+      clearPop();
+      return;
+    }
+    // was a tap
+    const target = e.target.closest ? e.target.closest('.carousel-card') : null;
+    if (target) {
+      if (activeCard === target) clearPop();
+      else popCard(target);
+    } else {
+      clearPop();
+    }
+  }
+  viewport.addEventListener('pointerup', endDrag);
+  viewport.addEventListener('pointercancel', endDrag);
+
+  // tapping/clicking anywhere outside the popped card resumes scrolling
+  document.addEventListener('pointerdown', (e) => {
+    if (!activeCard) return;
+    if (!activeCard.contains(e.target) && !viewport.contains(e.target)) {
+      clearPop();
+    }
+  });
+})();
+
+// Art contest countdown — live, no daily updates needed
+(function() {
+  const el = document.getElementById('countdown');
+  if (!el) return;
+
+  // Fixed target: Aug 15, 2026, 5:00 PM UTC
+  const TARGET = Date.UTC(2026, 7, 15, 17, 0, 0);
+
+  const dEl = document.getElementById('cd-days');
+  const hEl = document.getElementById('cd-hours');
+  const mEl = document.getElementById('cd-mins');
+  const sEl = document.getElementById('cd-secs');
+  let timer = null;
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  function render() {
+    const diff = TARGET - Date.now();
+
+    if (diff <= 0) {
+      if (timer) clearInterval(timer);
+      el.classList.add('ended');
+      el.innerHTML = `
+        <div class="countdown-glow"></div>
+        <div class="countdown-corner tl"></div>
+        <div class="countdown-corner tr"></div>
+        <div class="countdown-corner bl"></div>
+        <div class="countdown-corner br"></div>
+        <p class="countdown-ended-text">Art contest ended.<br>Thanks for your participation.</p>
+      `;
+      return;
+    }
+
+    const days = Math.floor(diff / 86400000);
+    const hours = Math.floor((diff % 86400000) / 3600000);
+    const mins = Math.floor((diff % 3600000) / 60000);
+    const secs = Math.floor((diff % 60000) / 1000);
+
+    dEl.textContent = pad(days);
+    hEl.textContent = pad(hours);
+    mEl.textContent = pad(mins);
+    sEl.textContent = pad(secs);
+  }
+
+  render();
+  timer = setInterval(render, 1000);
 })();
 </script>
 
