@@ -263,6 +263,13 @@
 
   .hero-actions {
     display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .hero-actions-row {
+    display: flex;
     gap: 1rem;
     justify-content: center;
     flex-wrap: wrap;
@@ -716,7 +723,8 @@
     .hero-eyebrow { font-size: 0.65rem; letter-spacing: 0.28em; margin-bottom: 0.85rem; }
     .hero-headline { font-size: clamp(1.75rem, 8.5vw, 2.6rem); line-height: 1.1; margin-bottom: 1.1rem; }
     .hero-sub { font-size: 0.88rem; line-height: 1.75; margin-bottom: 2rem; max-width: 90%; }
-    .hero-actions { flex-direction: column; align-items: center; gap: 0.75rem; width: 100%; }
+    .hero-actions { width: 100%; gap: 0.75rem; }
+    .hero-actions-row { flex-direction: column; align-items: center; gap: 0.75rem; width: 100%; }
     .hero-actions a { width: min(280px, 80vw); text-align: center; padding: 0.9rem 1.5rem; font-size: 0.75rem; }
     .hero-corner { width: 28px; height: 28px; }
     .hero-corner.tl { top: 4.5rem; left: 1rem; }
@@ -1781,10 +1789,14 @@
     <h1 class="hero-headline">Not fully apes.<br>Not fully human.<br><span>Something else entirely.</span></h1>
     <p class="hero-sub">An ancient species awakens. Evolution is not a destination, it is a reckoning.</p>
     <div class="hero-actions">
-      <a href="https://primalsnft.xyz/checkeligibility" class="btn-solid btn-glow">Check Eligibility</a>
-      <a href="https://discord.gg/ZRrWFfRVez" target="_blank" class="btn-outline">Join Discord</a>
-      <a href="https://x.com/primalsnftx" target="_blank" class="btn-outline">Follow on X</a>
-     <a href="https://www.primalsnft.xyz/primaldash" target="_blank" class="btn-solid">Play Primal Dash</a>
+      <div class="hero-actions-row">
+        <a href="https://primalsnft.xyz/checkeligibility" class="btn-solid btn-glow">Check Eligibility</a>
+        <a href="https://www.primalsnft.xyz/primaldash" target="_blank" class="btn-solid">Play Primal Dash</a>
+      </div>
+      <div class="hero-actions-row">
+        <a href="https://discord.gg/ZRrWFfRVez" target="_blank" class="btn-outline">Join Discord</a>
+        <a href="https://x.com/primalsnftx" target="_blank" class="btn-outline">Follow on X</a>
+      </div>
     </div>
   </div>
 </div>
