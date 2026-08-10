@@ -100,6 +100,24 @@
   }
   .btn-solid:hover { background: var(--red-bright); }
 
+  /* Mobile icon-only nav buttons — hidden on desktop, mirrors the homepage nav */
+  .nav-icon-btn {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: rgba(192,17,10,0.06);
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: border-color 0.2s, color 0.2s, background 0.2s;
+    flex-shrink: 0;
+  }
+  .nav-icon-btn:hover { border-color: var(--red); color: var(--red-bright); background: rgba(192,17,10,0.14); }
+  .nav-icon-btn svg { width: 18px; height: 18px; fill: currentColor; }
+
   main {
     min-height: 100vh;
     display: flex;
@@ -189,6 +207,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 0.55rem;
     background: var(--red);
     border: 1px solid var(--red);
     color: #fff;
@@ -203,7 +222,21 @@
     white-space: nowrap;
   }
   .check-btn:hover:not(:disabled) { background: var(--red-bright); }
-  .check-btn:disabled { opacity: 0.6; cursor: default; }
+  .check-btn:disabled { opacity: 0.85; cursor: default; }
+
+  /* Spinner shown inside the button while the check is running */
+  .btn-spinner {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.35);
+    border-top-color: #fff;
+    animation: spin 0.7s linear infinite;
+    display: none;
+    flex-shrink: 0;
+  }
+  .check-btn.loading .btn-spinner { display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
   .msg {
     margin-top: 1rem;
@@ -211,8 +244,15 @@
     padding: 0.85rem 1rem;
     display: none;
     border: 1px solid transparent;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.35s ease, transform 0.35s ease;
   }
-  .msg.show { display: block; }
+  .msg.show {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+  }
   .msg.error {
     color: #FF8A82;
     border-color: rgba(224,26,16,0.4);
@@ -270,6 +310,14 @@
     .check-btn { width: 100%; }
     nav { padding: 1rem 1.2rem; }
   }
+
+  /* Mirrors the homepage's mobile nav: icon-only Discord/X buttons, luxury minimal treatment */
+  @media (max-width: 720px) {
+    .nav-cta .btn-outline,
+    .nav-cta .btn-solid { display: none; }
+    .nav-icon-btn { display: flex; }
+    .nav-cta { gap: 0.5rem; }
+  }
 </style>
 </head>
 <body>
@@ -277,8 +325,16 @@
 <nav>
   <a href="/" class="nav-logo">PRIMALS</a>
   <div class="nav-cta">
+    <!-- Desktop text buttons -->
     <a href="https://discord.gg/ZRrWFfRVez" target="_blank" class="btn-outline">Discord</a>
     <a href="https://x.com/primalsnftx" target="_blank" class="btn-solid">Follow on X</a>
+    <!-- Mobile icon buttons -->
+    <a href="https://discord.gg/ZRrWFfRVez" target="_blank" class="nav-icon-btn" aria-label="Discord">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
+    </a>
+    <a href="https://x.com/primalsnftx" target="_blank" class="nav-icon-btn" aria-label="X / Twitter">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.748l7.73-8.835L1.254 2.25H8.08l4.261 5.635L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z"/></svg>
+    </a>
   </div>
 </nav>
 
@@ -293,7 +349,10 @@
       <label for="wallet">Wallet Address</label>
       <div class="input-row">
         <input type="text" id="wallet" placeholder="Paste your Solana address..." autocomplete="off" spellcheck="false" />
-        <button class="check-btn" id="checkBtn">Check</button>
+        <button class="check-btn" id="checkBtn">
+          <span class="btn-spinner" aria-hidden="true"></span>
+          <span class="btn-label">Check</span>
+        </button>
       </div>
       <div class="msg" id="msg"></div>
     </div>
@@ -308,6 +367,7 @@
 (function () {
   const input = document.getElementById('wallet');
   const btn = document.getElementById('checkBtn');
+  const btnLabel = btn.querySelector('.btn-label');
   const msg = document.getElementById('msg');
 
   // Base58, 32-44 chars — standard Solana address shape (excludes 0, O, I, l).
@@ -321,6 +381,10 @@
 
   let lists = null; // { OG: Set, WL: Set, WL2: Set }
   let loadError = false;
+
+  // Minimum time the loading state stays visible, so a fast cache hit
+  // still reads as a deliberate check rather than an instant flicker.
+  const MIN_CHECK_MS = 550;
 
   function parseCsv(text) {
     return text
@@ -345,25 +409,46 @@
     }
   }
 
+  function hideMsg() {
+    msg.classList.remove('show');
+  }
+
   function showMsg(text, type) {
     msg.textContent = '';
-    msg.className = 'msg show ' + type;
+    msg.className = 'msg ' + type;
     msg.textContent = text;
+    // reflow so the fade-in transition replays every time, even for the same type
+    void msg.offsetWidth;
+    msg.classList.add('show');
   }
 
   function showPhaseMsg(label, text, type) {
-    msg.className = 'msg show ' + type;
+    msg.className = 'msg ' + type;
     msg.innerHTML = '<span class="phase-tag">' + label + '</span><br>' + text;
+    void msg.offsetWidth;
+    msg.classList.add('show');
   }
 
   function showMultiPhaseMsg(labels, text, type) {
     const chips = labels.map(l => '<span class="phase-chip">' + l + '</span>').join('');
-    msg.className = 'msg show ' + type;
+    msg.className = 'msg ' + type;
     msg.innerHTML = '<div class="phase-tags">' + chips + '</div>' + text;
+    void msg.offsetWidth;
+    msg.classList.add('show');
   }
 
   function isSolanaAddress(addr) {
     return SOLANA_RE.test(addr);
+  }
+
+  function setLoading(isLoading) {
+    btn.disabled = isLoading;
+    btn.classList.toggle('loading', isLoading);
+    btnLabel.textContent = isLoading ? 'Checking...' : 'Check';
+  }
+
+  function wait(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   async function handleCheck() {
@@ -379,15 +464,22 @@
       return;
     }
 
-    btn.disabled = true;
-    btn.textContent = 'Checking...';
+    hideMsg();
+    setLoading(true);
+    const startedAt = Date.now();
 
     if (!lists && !loadError) {
       await loadLists();
     }
 
-    btn.disabled = false;
-    btn.textContent = 'Check';
+    // Keep the spinner up for at least MIN_CHECK_MS so the result
+    // always lands as a distinct, readable moment.
+    const elapsed = Date.now() - startedAt;
+    if (elapsed < MIN_CHECK_MS) {
+      await wait(MIN_CHECK_MS - elapsed);
+    }
+
+    setLoading(false);
 
     if (loadError || !lists) {
       showMsg('Could not load eligibility data. Please refresh or try again shortly.', 'error');
