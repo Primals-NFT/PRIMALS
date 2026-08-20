@@ -301,6 +301,63 @@
     margin-bottom: 0.4rem;
   }
 
+  /* Sequential eligibility check rows */
+  .check-sequence {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .check-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 0.08em;
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    opacity: 0;
+    transform: translateX(-6px);
+    animation: rowIn 0.3s ease forwards;
+  }
+  .check-row.is-match { color: #C9F5D8; }
+
+  @keyframes rowIn {
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .check-row-status {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+  }
+  .check-row-status.pending::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    animation: pendingPulse 0.9s ease-in-out infinite;
+  }
+  @keyframes pendingPulse {
+    0%, 100% { opacity: 0.3; transform: scale(0.8); }
+    50% { opacity: 1; transform: scale(1.25); }
+  }
+  .check-row-status.match { color: #3FBF6A; }
+  .check-row-status.match::before { content: '\2713'; }
+  .check-row-status.no-match { color: var(--text-muted); }
+  .check-row-status.no-match::before { content: '\2013'; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .check-row { animation: none; opacity: 1; transform: none; }
+    .check-row-status.pending::before { animation: none; }
+  }
+
   .phase-chip {
     display: inline-block;
     font-family: 'Bebas Neue', sans-serif;
@@ -467,6 +524,64 @@
     msg.classList.add('show');
   }
 
+  function revealFinalEligibility(matched) {
+    // Crossfade the checklist out, then swap to the final result.
+    msg.classList.remove('show');
+    setTimeout(() => {
+      if (matched.length === 1) {
+        showPhaseMsg(matched[0] + ' PHASE', "You're eligible to mint in the " + matched[0] + " phase.", 'success');
+      } else {
+        const nice = matched.join(', ').replace(/, ([^,]*)$/, ' & $1');
+        showMultiPhaseMsg(
+          matched.map(p => p + ' PHASE'),
+          "You're eligible to mint in the " + nice + " phases.",
+          'success'
+        );
+      }
+    }, 350);
+  }
+
+  function showEligibilityCheckSequence(matched) {
+    const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) {
+      revealFinalEligibility(matched);
+      return;
+    }
+
+    const phases = ['OG', 'WL', 'WL2'];
+    msg.className = 'msg success';
+    msg.innerHTML = '<div class="check-sequence">' +
+      phases.map((p, i) =>
+        '<div class="check-row" data-phase="' + p + '" style="animation-delay:' + (i * 90) + 'ms">' +
+          '<span>' + p + ' PHASE</span>' +
+          '<span class="check-row-status pending"></span>' +
+        '</div>'
+      ).join('') +
+      '</div>';
+    void msg.offsetWidth;
+    msg.classList.add('show');
+
+    let i = 0;
+    function resolveNext() {
+      if (i >= phases.length) {
+        setTimeout(() => revealFinalEligibility(matched), 450);
+        return;
+      }
+      const phase = phases[i];
+      const row = msg.querySelector('.check-row[data-phase="' + phase + '"]');
+      if (row) {
+        const statusEl = row.querySelector('.check-row-status');
+        const isMatch = matched.includes(phase);
+        statusEl.className = 'check-row-status ' + (isMatch ? 'match' : 'no-match');
+        if (isMatch) row.classList.add('is-match');
+      }
+      i++;
+      setTimeout(resolveNext, 420);
+    }
+    // Let the rows finish entering before the first one resolves.
+    setTimeout(resolveNext, 400);
+  }
+
   function isSolanaAddress(addr) {
     return SOLANA_RE.test(addr);
   }
@@ -523,16 +638,8 @@
 
     if (matched.length === 0) {
       showPhaseMsg('PUBLIC PHASE', "This wallet isn't on an allowlist. You'll be able to mint during the Public phase.", 'neutral');
-    } else if (matched.length === 1) {
-      const phase = matched[0];
-      showPhaseMsg(phase + ' PHASE', "You're eligible to mint in the " + phase + " phase.", 'success');
     } else {
-      const nice = matched.join(', ').replace(/, ([^,]*)$/, ' & $1');
-      showMultiPhaseMsg(
-        matched.map(p => p + ' PHASE'),
-        "You're eligible to mint in the " + nice + " phases.",
-        'success'
-      );
+      showEligibilityCheckSequence(matched);
     }
   }
 
