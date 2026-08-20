@@ -135,6 +135,17 @@
     inset: 0;
     background: radial-gradient(ellipse 70% 60% at 50% 40%, rgba(120,8,4,0.35) 0%, transparent 70%);
     pointer-events: none;
+    animation: glowBreathe 7s ease-in-out infinite;
+    transform-origin: 50% 40%;
+  }
+
+  @keyframes glowBreathe {
+    0%, 100% { opacity: 0.85; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.08); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bg-glow { animation: none; }
   }
 
   .wrap {
@@ -300,6 +311,17 @@
     border: 1px solid rgba(63,191,106,0.5);
     background: rgba(63,191,106,0.1);
     color: #C9F5D8;
+    opacity: 0;
+    transform: translateY(4px) scale(0.94);
+    animation: chipPop 0.4s ease forwards;
+  }
+
+  @keyframes chipPop {
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .phase-chip { animation: none; opacity: 1; transform: none; }
   }
 
   footer {
@@ -437,7 +459,9 @@
   }
 
   function showMultiPhaseMsg(labels, text, type) {
-    const chips = labels.map(l => '<span class="phase-chip">' + l + '</span>').join('');
+    const chips = labels
+      .map((l, i) => '<span class="phase-chip" style="animation-delay:' + (i * 90) + 'ms">' + l + '</span>')
+      .join('');
     msg.className = 'msg ' + type;
     msg.innerHTML = '<div class="phase-tags">' + chips + '</div>' + text;
     void msg.offsetWidth;
