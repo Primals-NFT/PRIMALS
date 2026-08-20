@@ -301,7 +301,19 @@
     margin-bottom: 0.4rem;
   }
 
-  /* Sequential eligibility check rows */
+  .msg-body {
+    opacity: 1;
+    transition: opacity 0.22s ease;
+  }
+
+  .check-sequence-label {
+    font-size: 0.68rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 0.65rem;
+  }
+
   .check-sequence {
     display: flex;
     flex-direction: column;
@@ -319,8 +331,10 @@
     opacity: 0;
     transform: translateX(-6px);
     animation: rowIn 0.3s ease forwards;
+    transition: opacity 0.25s ease;
   }
   .check-row.is-match { color: #C9F5D8; }
+  .check-row.is-no-match { opacity: 0.55; }
 
   @keyframes rowIn {
     to { opacity: 1; transform: translateX(0); }
@@ -351,11 +365,23 @@
   .check-row-status.match { color: #3FBF6A; }
   .check-row-status.match::before { content: '\2713'; }
   .check-row-status.no-match { color: var(--text-muted); }
-  .check-row-status.no-match::before { content: '\2013'; }
+  .check-row-status.no-match::before { content: '\2715'; }
+  .check-row-status.match,
+  .check-row-status.no-match {
+    animation: statusPop 0.3s ease;
+  }
+  @keyframes statusPop {
+    0% { transform: scale(0.4); opacity: 0; }
+    60% { transform: scale(1.2); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
 
   @media (prefers-reduced-motion: reduce) {
     .check-row { animation: none; opacity: 1; transform: none; }
     .check-row-status.pending::before { animation: none; }
+    .check-row-status.match,
+    .check-row-status.no-match { animation: none; }
+    .msg-body { transition: none; }
   }
 
   .phase-chip {
@@ -439,7 +465,7 @@
           <span class="btn-label">Check</span>
         </button>
       </div>
-      <div class="msg" id="msg"></div>
+      <div class="msg" id="msg"><div class="msg-body" id="msgBody"></div></div>
     </div>
   </div>
 </main>
@@ -454,6 +480,7 @@
   const btn = document.getElementById('checkBtn');
   const btnLabel = btn.querySelector('.btn-label');
   const msg = document.getElementById('msg');
+  const msgBody = document.getElementById('msgBody');
 
   // Base58, 32-44 chars — standard Solana address shape (excludes 0, O, I, l).
   const SOLANA_RE = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
@@ -499,9 +526,8 @@
   }
 
   function showMsg(text, type) {
-    msg.textContent = '';
     msg.className = 'msg ' + type;
-    msg.textContent = text;
+    msgBody.textContent = text;
     // reflow so the fade-in transition replays every time, even for the same type
     void msg.offsetWidth;
     msg.classList.add('show');
@@ -509,7 +535,7 @@
 
   function showPhaseMsg(label, text, type) {
     msg.className = 'msg ' + type;
-    msg.innerHTML = '<span class="phase-tag">' + label + '</span><br>' + text;
+    msgBody.innerHTML = '<span class="phase-tag">' + label + '</span><br>' + text;
     void msg.offsetWidth;
     msg.classList.add('show');
   }
@@ -519,26 +545,61 @@
       .map((l, i) => '<span class="phase-chip" style="animation-delay:' + (i * 90) + 'ms">' + l + '</span>')
       .join('');
     msg.className = 'msg ' + type;
-    msg.innerHTML = '<div class="phase-tags">' + chips + '</div>' + text;
+    msgBody.innerHTML = '<div class="phase-tags">' + chips + '</div>' + text;
     void msg.offsetWidth;
     msg.classList.add('show');
   }
 
-  function revealFinalEligibility(matched) {
-    // Crossfade the checklist out, then swap to the final result.
-    msg.classList.remove('show');
+  // Swaps msgBody's content in place: fades the old content out, morphs the
+  // panel to the new content's height, then fades the new content in. The
+  // outer .msg panel (border/background) never disappears — only the
+  // content inside it changes, so it reads as one continuous panel.
+  function crossfadeMsgBody(renderFn) {
+    const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) {
+      renderFn();
+      return;
+    }
+
+    const cs = getComputedStyle(msg);
+    const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+    const startHeight = msg.getBoundingClientRect().height;
+
+    msg.style.height = startHeight + 'px';
+    msg.style.overflow = 'hidden';
+    msg.style.transition = 'height 0.32s ease';
+    msgBody.style.opacity = '0';
+
     setTimeout(() => {
+      renderFn();
+      void msgBody.offsetWidth;
+      const targetHeight = msgBody.scrollHeight + padY;
+      msg.style.height = targetHeight + 'px';
+      msgBody.style.opacity = '1';
+
+      setTimeout(() => {
+        // Release the fixed height once settled so the panel stays fluid.
+        msg.style.height = '';
+        msg.style.overflow = '';
+        msg.style.transition = '';
+      }, 340);
+    }, 220);
+  }
+
+  function revealFinalEligibility(matched) {
+    crossfadeMsgBody(() => {
       if (matched.length === 1) {
-        showPhaseMsg(matched[0] + ' PHASE', "You're eligible to mint in the " + matched[0] + " phase.", 'success');
+        msgBody.innerHTML = '<span class="phase-tag">' + matched[0] + ' PHASE</span><br>' +
+          "You're eligible to mint in the " + matched[0] + " phase.";
       } else {
         const nice = matched.join(', ').replace(/, ([^,]*)$/, ' & $1');
-        showMultiPhaseMsg(
-          matched.map(p => p + ' PHASE'),
-          "You're eligible to mint in the " + nice + " phases.",
-          'success'
-        );
+        const chips = matched
+          .map((p, i) => '<span class="phase-chip" style="animation-delay:' + (i * 90) + 'ms">' + p + ' PHASE</span>')
+          .join('');
+        msgBody.innerHTML = '<div class="phase-tags">' + chips + '</div>' +
+          "You're eligible to mint in the " + nice + " phases.";
       }
-    }, 350);
+    });
   }
 
   function showEligibilityCheckSequence(matched) {
@@ -550,7 +611,8 @@
 
     const phases = ['OG', 'WL', 'WL2'];
     msg.className = 'msg success';
-    msg.innerHTML = '<div class="check-sequence">' +
+    msgBody.innerHTML = '<div class="check-sequence-label">Checking Eligibility</div>' +
+      '<div class="check-sequence">' +
       phases.map((p, i) =>
         '<div class="check-row" data-phase="' + p + '" style="animation-delay:' + (i * 90) + 'ms">' +
           '<span>' + p + ' PHASE</span>' +
@@ -568,12 +630,12 @@
         return;
       }
       const phase = phases[i];
-      const row = msg.querySelector('.check-row[data-phase="' + phase + '"]');
+      const row = msgBody.querySelector('.check-row[data-phase="' + phase + '"]');
       if (row) {
         const statusEl = row.querySelector('.check-row-status');
         const isMatch = matched.includes(phase);
         statusEl.className = 'check-row-status ' + (isMatch ? 'match' : 'no-match');
-        if (isMatch) row.classList.add('is-match');
+        row.classList.add(isMatch ? 'is-match' : 'is-no-match');
       }
       i++;
       setTimeout(resolveNext, 420);
