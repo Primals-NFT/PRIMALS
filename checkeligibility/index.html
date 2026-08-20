@@ -306,14 +306,6 @@
     transition: opacity 0.22s ease;
   }
 
-  .check-sequence-label {
-    font-size: 0.68rem;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    margin-bottom: 0.65rem;
-  }
-
   .check-sequence {
     display: flex;
     flex-direction: column;
@@ -588,6 +580,7 @@
 
   function revealFinalEligibility(matched) {
     crossfadeMsgBody(() => {
+      setLoading(false);
       if (matched.length === 1) {
         msgBody.innerHTML = '<span class="phase-tag">' + matched[0] + ' PHASE</span><br>' +
           "You're eligible to mint in the " + matched[0] + " phase.";
@@ -611,8 +604,7 @@
 
     const phases = ['OG', 'WL', 'WL2'];
     msg.className = 'msg success';
-    msgBody.innerHTML = '<div class="check-sequence-label">Checking Eligibility</div>' +
-      '<div class="check-sequence">' +
+    msgBody.innerHTML = '<div class="check-sequence">' +
       phases.map((p, i) =>
         '<div class="check-row" data-phase="' + p + '" style="animation-delay:' + (i * 90) + 'ms">' +
           '<span>' + p + ' PHASE</span>' +
@@ -686,9 +678,8 @@
       await wait(MIN_CHECK_MS - elapsed);
     }
 
-    setLoading(false);
-
     if (loadError || !lists) {
+      setLoading(false);
       showMsg('Could not load eligibility data. Please refresh or try again shortly.', 'error');
       return;
     }
@@ -699,8 +690,12 @@
     if (lists.WL2.has(addr)) matched.push('WL2');
 
     if (matched.length === 0) {
+      setLoading(false);
       showPhaseMsg('PUBLIC PHASE', "This wallet isn't on an allowlist. You'll be able to mint during the Public phase.", 'neutral');
     } else {
+      // Button stays in its loading state through the role-by-role check
+      // sequence — showEligibilityCheckSequence turns it off once the
+      // final eligible result is actually on screen.
       showEligibilityCheckSequence(matched);
     }
   }
