@@ -581,10 +581,16 @@
   function revealFinalEligibility(matched) {
     crossfadeMsgBody(() => {
       setLoading(false);
-      if (matched.length === 1) {
+      if (matched.length === 0) {
+        msg.className = 'msg neutral';
+        msgBody.innerHTML = '<span class="phase-tag">PUBLIC PHASE</span><br>' +
+          "This wallet isn't on an allowlist. You'll be able to mint during the Public phase.";
+      } else if (matched.length === 1) {
+        msg.className = 'msg success';
         msgBody.innerHTML = '<span class="phase-tag">' + matched[0] + ' PHASE</span><br>' +
           "You're eligible to mint in the " + matched[0] + " phase.";
       } else {
+        msg.className = 'msg success';
         const nice = matched.join(', ').replace(/, ([^,]*)$/, ' & $1');
         const chips = matched
           .map((p, i) => '<span class="phase-chip" style="animation-delay:' + (i * 90) + 'ms">' + p + ' PHASE</span>')
@@ -603,7 +609,11 @@
     }
 
     const phases = ['OG', 'WL', 'WL2'];
-    msg.className = 'msg success';
+    // Neutral shell while rows are still resolving — the final class
+    // (success/neutral) is applied once revealFinalEligibility lands,
+    // so a no-match result doesn't sit inside a green "success" panel
+    // while it's still being decided.
+    msg.className = 'msg neutral';
     msgBody.innerHTML = '<div class="check-sequence">' +
       phases.map((p, i) =>
         '<div class="check-row" data-phase="' + p + '" style="animation-delay:' + (i * 90) + 'ms">' +
@@ -689,15 +699,10 @@
     if (lists.WL.has(addr)) matched.push('WL');
     if (lists.WL2.has(addr)) matched.push('WL2');
 
-    if (matched.length === 0) {
-      setLoading(false);
-      showPhaseMsg('PUBLIC PHASE', "This wallet isn't on an allowlist. You'll be able to mint during the Public phase.", 'neutral');
-    } else {
-      // Button stays in its loading state through the role-by-role check
-      // sequence — showEligibilityCheckSequence turns it off once the
-      // final eligible result is actually on screen.
-      showEligibilityCheckSequence(matched);
-    }
+    // Button stays in its loading state through the full row-by-row check
+    // sequence regardless of outcome — showEligibilityCheckSequence turns
+    // it off (via revealFinalEligibility) once the final result is on screen.
+    showEligibilityCheckSequence(matched);
   }
 
   btn.addEventListener('click', handleCheck);
