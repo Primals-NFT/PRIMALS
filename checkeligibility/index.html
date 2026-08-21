@@ -582,15 +582,15 @@
     crossfadeMsgBody(() => {
       setLoading(false);
       if (matched.length === 0) {
-        msg.className = 'msg neutral';
+        msg.className = 'msg neutral show';
         msgBody.innerHTML = '<span class="phase-tag">PUBLIC PHASE</span><br>' +
           "This wallet isn't on an allowlist. You'll be able to mint during the Public phase.";
       } else if (matched.length === 1) {
-        msg.className = 'msg success';
+        msg.className = 'msg success show';
         msgBody.innerHTML = '<span class="phase-tag">' + matched[0] + ' PHASE</span><br>' +
           "You're eligible to mint in the " + matched[0] + " phase.";
       } else {
-        msg.className = 'msg success';
+        msg.className = 'msg success show';
         const nice = matched.join(', ').replace(/, ([^,]*)$/, ' & $1');
         const chips = matched
           .map((p, i) => '<span class="phase-chip" style="animation-delay:' + (i * 90) + 'ms">' + p + ' PHASE</span>')
