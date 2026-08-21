@@ -588,7 +588,7 @@
       } else if (matched.length === 1) {
         msg.className = 'msg success show';
         msgBody.innerHTML = '<span class="phase-tag">' + matched[0] + ' PHASE</span><br>' +
-          "You're eligible to mint in the " + matched[0] + " phase.";
+          "You're eligible to mint during the " + matched[0] + " phase.";
       } else {
         msg.className = 'msg success show';
         const nice = matched.join(', ').replace(/, ([^,]*)$/, ' & $1');
@@ -596,7 +596,7 @@
           .map((p, i) => '<span class="phase-chip" style="animation-delay:' + (i * 90) + 'ms">' + p + ' PHASE</span>')
           .join('');
         msgBody.innerHTML = '<div class="phase-tags">' + chips + '</div>' +
-          "You're eligible to mint in the " + nice + " phases.";
+          "You're eligible to mint during the " + nice + " phases.";
       }
     });
   }
