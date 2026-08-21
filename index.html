@@ -1919,7 +1919,9 @@
   .orbis-header-text { max-width: 560px; }
 
   /* Full-width banner — spans the entire section edge-to-edge, above the
-     header, instead of the old small centered pill. */
+     header. Uses a gradient border-image so the outline is consistent on
+     all four sides (previously only top/bottom had a border, which made
+     the left/right edges look cut off). */
   .orbis-first-banner {
     position: relative;
     z-index: 2;
@@ -1932,8 +1934,8 @@
     margin-bottom: 3rem;
     text-align: center;
     background: linear-gradient(90deg, rgba(138,106,234,0.14), rgba(103,158,227,0.14), rgba(116,247,158,0.14));
-    border-top: 1px solid rgba(138,106,234,0.4);
-    border-bottom: 1px solid rgba(116,247,158,0.4);
+    border: 0.5px solid transparent;
+    border-image: linear-gradient(90deg, var(--orbis-1), var(--orbis-2), var(--orbis-3)) 1;
   }
 
   .orbis-first-banner-text {
